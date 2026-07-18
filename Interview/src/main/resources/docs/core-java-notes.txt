@@ -1,0 +1,4 @@
+HashMap allows one null key and multiple null values. It is not synchronized and not thread-safe.
+HashTable does not allow any null key or null value. It is synchronized and thread-safe, but slower due to locking.
+ArrayList is backed by a dynamic array. Access by index is O(1). Insertion/deletion in the middle is O(n) due to shifting.
+LinkedList is backed by a doubly linked list. Insertion/deletion at the ends is O(1). Access by index is O(n).

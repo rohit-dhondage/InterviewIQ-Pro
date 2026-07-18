@@ -1,12 +1,17 @@
 package com.example.Interview.rag;
 
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/doubts")
@@ -14,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class DoubtController {
 
     private final ChatClient.Builder chatClientBuilder;
+    private final VectorStore vectorStore;
 
     @GetMapping("/status")
     public String status() {
@@ -36,4 +42,29 @@ public class DoubtController {
         }
         return "Key starts with: " + key.substring(0, Math.min(6, key.length())) + "... (length: " + key.length() + ")";
     }
+        @GetMapping("/ask")
+        public String ask(@RequestParam String question) {
+            List<Document> relevant = vectorStore.similaritySearch(question);
+
+            String context = relevant.stream()
+                    .map(Document::getFormattedContent)
+                    .reduce("", (a, b) -> a + "\n" + b);
+
+            return chatClientBuilder.build()
+                    .prompt()
+                    .user(u -> u.text("""
+                Answer the student's question using only the context below.
+                If the context doesn't contain the answer, say so honestly.
+
+                Context:
+                {context}
+
+                Question: {question}
+                """)
+                            .param("context", context)
+                            .param("question", question))
+                    .call()
+                    .content();
+        }
+
 }
