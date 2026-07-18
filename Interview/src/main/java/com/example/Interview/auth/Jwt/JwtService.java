@@ -1,4 +1,4 @@
-package com.example.Interview.auth;
+package com.example.Interview.auth.Jwt;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

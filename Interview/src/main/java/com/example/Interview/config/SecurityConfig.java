@@ -1,6 +1,6 @@
 package com.example.Interview.config;
 
-import com.example.Interview.auth.JwtAuthFilter;
+import com.example.Interview.auth.Jwt.JwtAuthFilter;
 import com.example.Interview.auth.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

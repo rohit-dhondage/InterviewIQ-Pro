@@ -1,4 +1,4 @@
-package com.example.Interview.analytics;
+package com.example.Interview.interview;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

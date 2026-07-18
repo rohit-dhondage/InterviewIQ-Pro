@@ -1,6 +1,7 @@
 package com.example.Interview.auth;
 
 import com.example.Interview.auth.Entity.User;
+import com.example.Interview.auth.Jwt.JwtService;
 import com.example.Interview.auth.Repository.UserRepository;
 import com.example.Interview.auth.dto.AuthResponse;
 import com.example.Interview.auth.dto.LoginRequest;

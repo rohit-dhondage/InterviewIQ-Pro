@@ -1,4 +1,4 @@
-package com.example.Interview.auth;
+package com.example.Interview.auth.Jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
