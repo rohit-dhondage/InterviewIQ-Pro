@@ -66,5 +66,11 @@ public class DoubtController {
                     .call()
                     .content();
         }
-
+    @GetMapping("/debug-gemini-key")
+    public String debugGeminiKey(@Value("${spring.ai.google.genai.api-key}") String key) {
+        if (key == null || key.isBlank()) {
+            return "GEMINI key is NULL or EMPTY";
+        }
+        return "Key starts with: " + key.substring(0, Math.min(6, key.length())) + "... (length: " + key.length() + ")";
+    }
 }
