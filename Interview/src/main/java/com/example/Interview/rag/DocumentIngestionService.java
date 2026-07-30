@@ -22,11 +22,10 @@ public class DocumentIngestionService implements CommandLineRunner {
         TextReader reader = new TextReader(new ClassPathResource("docs/core-java-notes.txt"));
         List<Document> rawDocs = reader.get();
 
-        // TokenTextSplitter is Spring AI's built-in chunker — same lesson as Jwts.builder(): use the library's tool, don't hand-roll splitting logic
         TokenTextSplitter splitter = new TokenTextSplitter();
         List<Document> chunks = splitter.apply(rawDocs);
 
-        vectorStore.add(chunks); // embeds each chunk and stores it — happens automatically
+        vectorStore.add(chunks); // embeds each chunk via googleGenAiTextEmbedding, stores in pgvector
         System.out.println("Ingested " + chunks.size() + " chunks into the vector store.");
     }
 }

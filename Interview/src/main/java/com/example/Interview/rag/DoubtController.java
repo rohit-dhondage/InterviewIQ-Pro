@@ -18,7 +18,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DoubtController {
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final ChatClient chatClient;
     private final VectorStore vectorStore;
 
     @GetMapping("/status")
@@ -29,7 +29,7 @@ public class DoubtController {
     // Temporary — just to confirm the Groq connection works. We'll replace this with real RAG logic next.
     @GetMapping("/test")
     public String test(@RequestParam String question) {
-        ChatClient chatClient = chatClientBuilder.build();
+
         return chatClient.prompt()
                 .user(question)
                 .call()
@@ -50,7 +50,7 @@ public class DoubtController {
                     .map(Document::getFormattedContent)
                     .reduce("", (a, b) -> a + "\n" + b);
 
-            return chatClientBuilder.build()
+            return chatClient
                     .prompt()
                     .user(u -> u.text("""
                 Answer the student's question using only the context below.
