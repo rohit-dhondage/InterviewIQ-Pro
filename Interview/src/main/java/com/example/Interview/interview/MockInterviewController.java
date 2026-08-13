@@ -4,7 +4,7 @@ import com.example.Interview.student.Student;
 import com.example.Interview.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -85,7 +85,7 @@ public class MockInterviewController {
         String firstQuestion = chatClient.prompt()
                 .system(systemPrompt)
                 .user("Begin the interview with your first question.")
-                .advisors(a -> a.param(MessageChatMemoryAdvisor.CONVERSATION_ID, sessionId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .call()
                 .content();
 
@@ -110,7 +110,7 @@ public class MockInterviewController {
 
         String reply = chatClient.prompt()
                 .user(userTurn)
-                .advisors(a -> a.param(MessageChatMemoryAdvisor.CONVERSATION_ID, sessionId))
+                .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .call()
                 .content();
 
