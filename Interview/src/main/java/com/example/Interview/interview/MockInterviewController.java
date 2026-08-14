@@ -1,10 +1,14 @@
 package com.example.Interview.interview;
 
+import com.example.Interview.auth.Entity.User;
+import com.example.Interview.exception.ApiException;
 import com.example.Interview.student.Student;
 import com.example.Interview.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -30,9 +34,8 @@ public class MockInterviewController {
     // --- Scheduling ---
 
     @PostMapping("/schedule")
-    public MockInterviewSession schedule(@RequestBody ScheduleRequest request) {
-        Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new IllegalArgumentException("No student found for id: " + request.studentId()));
+    public MockInterviewSession schedule(@AuthenticationPrincipal User user, @RequestBody ScheduleRequest request) {
+        Student student = resolveStudent(user);
 
         MockInterviewSession session = MockInterviewSession.builder()
                 .student(student)
@@ -47,23 +50,24 @@ public class MockInterviewController {
         return sessionRepository.save(session);
     }
 
-    @GetMapping("/upcoming/{studentId}")
-    public List<MockInterviewSession> upcoming(@PathVariable Long studentId) {
+    @GetMapping("/upcoming/me")
+    public List<MockInterviewSession> upcoming(@AuthenticationPrincipal User user) {
+        Student student = resolveStudent(user);
         return sessionRepository.findByStudentIdAndStatusOrderByScheduledAtAsc(
-                studentId, MockInterviewSession.InterviewStatus.SCHEDULED);
+                student.getId(), MockInterviewSession.InterviewStatus.SCHEDULED);
     }
 
-    @GetMapping("/history/{studentId}")
-    public List<MockInterviewSession> history(@PathVariable Long studentId) {
-        return sessionRepository.findByStudentIdOrderByScheduledAtDesc(studentId);
+    @GetMapping("/history/me")
+    public List<MockInterviewSession> history(@AuthenticationPrincipal User user) {
+        Student student = resolveStudent(user);
+        return sessionRepository.findByStudentIdOrderByScheduledAtDesc(student.getId());
     }
 
     // --- Running a session ---
 
     @PostMapping("/{sessionId}/start")
-    public InterviewResponse start(@PathVariable String sessionId) {
-        MockInterviewSession session = sessionRepository.findById(sessionId)
-                .orElseThrow(() -> new IllegalArgumentException("No session found for id: " + sessionId));
+    public InterviewResponse start(@AuthenticationPrincipal User user, @PathVariable String sessionId) {
+        MockInterviewSession session = resolveOwnedSession(sessionId, user);
 
         session.setStatus(MockInterviewSession.InterviewStatus.IN_PROGRESS);
         session.setStartedAt(LocalDateTime.now());
@@ -95,7 +99,9 @@ public class MockInterviewController {
     }
 
     @PostMapping("/{sessionId}/answer")
-    public InterviewResponse answer(@PathVariable String sessionId, @RequestBody AnswerRequest request) {
+    public InterviewResponse answer(@AuthenticationPrincipal User user, @PathVariable String sessionId, @RequestBody AnswerRequest request) {
+        resolveOwnedSession(sessionId, user);
+
         int count = questionCount.getOrDefault(sessionId, 0) + 1;
         questionCount.put(sessionId, count);
 
@@ -116,7 +122,7 @@ public class MockInterviewController {
 
         if (isFinal) {
             MockInterviewSession session = sessionRepository.findById(sessionId)
-                    .orElseThrow(() -> new IllegalArgumentException("No session found for id: " + sessionId));
+                    .orElseThrow(() -> new ApiException("No session found for id: " + sessionId, HttpStatus.NOT_FOUND));
 
             LocalDateTime now = LocalDateTime.now();
             session.setStatus(MockInterviewSession.InterviewStatus.COMPLETED);
@@ -138,9 +144,27 @@ public class MockInterviewController {
         return new InterviewResponse(sessionId, reply, false, null);
     }
 
+    // --- Helpers ---
+
+    private Student resolveStudent(User user) {
+        return studentRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ApiException("No student profile found for this account", HttpStatus.NOT_FOUND));
+    }
+
+    private MockInterviewSession resolveOwnedSession(String sessionId, User user) {
+        MockInterviewSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new ApiException("No session found for id: " + sessionId, HttpStatus.NOT_FOUND));
+
+        if (!session.getStudent().getUser().getId().equals(user.getId())) {
+            throw new ApiException("You do not have access to this interview session", HttpStatus.FORBIDDEN);
+        }
+
+        return session;
+    }
+
     // --- DTOs ---
     public record ScheduleRequest(
-            Long studentId, String company, String role, String round,
+            String company, String role, String round,
             MockInterviewSession.InterviewType interviewType, LocalDateTime scheduledAt) {}
 
     public record AnswerRequest(String answer) {}
