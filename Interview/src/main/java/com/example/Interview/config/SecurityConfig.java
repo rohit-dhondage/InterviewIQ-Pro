@@ -45,8 +45,12 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // TEMPORARY: Allow all APIs while developing
-                        .requestMatchers("/api/v1/**").permitAll()
+                        // Module health checks are safe to expose without auth
+                        .requestMatchers(
+                                "/api/v1/interview/status",
+                                "/api/v1/doubts/status",
+                                "/api/v1/analytics/status"
+                        ).permitAll()
 
                         .anyRequest().authenticated()
                 )

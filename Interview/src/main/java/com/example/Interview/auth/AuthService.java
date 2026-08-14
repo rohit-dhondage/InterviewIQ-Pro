@@ -6,27 +6,44 @@ import com.example.Interview.auth.Repository.UserRepository;
 import com.example.Interview.auth.dto.AuthResponse;
 import com.example.Interview.auth.dto.LoginRequest;
 import com.example.Interview.auth.dto.RegisterRequest;
+import com.example.Interview.college.College;
+import com.example.Interview.college.CollegeRepository;
+import com.example.Interview.college.Department;
+import com.example.Interview.college.DepartmentRepository;
 import com.example.Interview.exception.ApiException;
+import com.example.Interview.student.Student;
+import com.example.Interview.student.StudentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final StudentRepository studentRepository;
+    private final CollegeRepository collegeRepository;
+    private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new ApiException("An account with this email already exists", HttpStatus.CONFLICT);
         }
+
+        College college = collegeRepository.findById(request.collegeId())
+                .orElseThrow(() -> new ApiException("No college found for id: " + request.collegeId(), HttpStatus.BAD_REQUEST));
+
+        Department department = departmentRepository.findById(request.departmentId())
+                .orElseThrow(() -> new ApiException("No department found for id: " + request.departmentId(), HttpStatus.BAD_REQUEST));
 
         User user = User.builder()
                 .fullName(request.fullName())
@@ -37,6 +54,16 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
+        Student student = Student.builder()
+                .user(user)
+                .college(college)
+                .department(department)
+                .year(request.year())
+                .rollNo(request.rollNo())
+                .build();
+
+        studentRepository.save(student);
 
         String token = jwtService.generateToken(user);
         return toAuthResponse(user, token);
