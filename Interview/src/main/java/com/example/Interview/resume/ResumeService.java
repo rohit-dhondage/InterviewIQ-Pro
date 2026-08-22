@@ -37,6 +37,7 @@ public class ResumeService {
                 .resumeUrl(storedPath)
                 .atsScore(scoring.atsScore())
                 .feedback(scoring.feedback())
+                .extractedText(text)
                 .build();
 
         return resumeRepository.save(resume);

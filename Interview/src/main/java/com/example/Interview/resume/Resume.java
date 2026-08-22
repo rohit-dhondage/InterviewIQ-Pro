@@ -32,6 +32,9 @@ public class Resume {
     @Column(columnDefinition = "TEXT")
     private String feedback;
 
+    @Column(name = "extracted_text", columnDefinition = "TEXT")
+    private String extractedText;
+
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
 
