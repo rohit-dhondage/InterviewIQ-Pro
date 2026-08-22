@@ -37,6 +37,10 @@ public class MockInterviewSession {
 
     private Integer durationSeconds;
 
+    @Column(name = "current_question_count")
+    @Builder.Default
+    private Integer currentQuestionCount = 0;
+
     @Enumerated(EnumType.STRING)
     private InterviewStatus status;
 

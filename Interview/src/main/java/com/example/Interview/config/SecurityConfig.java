@@ -52,6 +52,23 @@ public class SecurityConfig {
                                 "/api/v1/analytics/status"
                         ).permitAll()
 
+                        // College list is public (needed for registration dropdown)
+                        .requestMatchers("/api/v1/colleges/**").permitAll()
+
+                        // Admin-only endpoints
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+
+                        // TPO-only endpoints
+                        .requestMatchers("/api/v1/tpo/**").hasRole("TPO")
+
+                        // Student endpoints — accessible by students
+                        .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/interviews/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/resumes/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/dashboard/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/roadmap/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/doubts/**").hasRole("STUDENT")
+
                         .anyRequest().authenticated()
                 )
 

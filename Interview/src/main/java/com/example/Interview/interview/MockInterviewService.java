@@ -27,9 +27,6 @@ public class MockInterviewService {
     private final StudentRepository studentRepository;
     private final ResumeRepository resumeRepository;
 
-    private final Map<String, Integer> questionCount = new ConcurrentHashMap<>();
-    private final Map<String, StringBuilder> transcripts = new ConcurrentHashMap<>();
-
     private static final int QUESTIONS_PER_ROUND = 4;
 
     public MockInterviewSession schedule(User user, MockInterviewController.ScheduleRequest request) {
@@ -64,10 +61,8 @@ public class MockInterviewService {
 
         session.setStatus(MockInterviewSession.InterviewStatus.IN_PROGRESS);
         session.setStartedAt(LocalDateTime.now());
-        sessionRepository.save(session);
-
-        questionCount.put(sessionId, 0);
-        transcripts.put(sessionId, new StringBuilder());
+        session.setCurrentQuestionCount(0);
+        session.setTranscript("");
 
         // Fetch latest resume to personalize prompt
         String resumeContext = "";
@@ -97,18 +92,20 @@ public class MockInterviewService {
                 .call()
                 .content();
 
-        transcripts.get(sessionId).append("Q1: ").append(firstQuestion).append("\n");
+        session.setTranscript("Q1: " + firstQuestion + "\n");
+        sessionRepository.save(session);
 
         return new MockInterviewController.InterviewResponse(sessionId, firstQuestion, false, null);
     }
 
     public MockInterviewController.InterviewResponse processAnswer(User user, String sessionId, String answer) {
-        resolveOwnedSession(sessionId, user);
+        MockInterviewSession session = resolveOwnedSession(sessionId, user);
 
-        int count = questionCount.getOrDefault(sessionId, 0) + 1;
-        questionCount.put(sessionId, count);
-
-        StringBuilder transcript = transcripts.computeIfAbsent(sessionId, k -> new StringBuilder());
+        int count = session.getCurrentQuestionCount() + 1;
+        
+        StringBuilder transcript = new StringBuilder(
+                session.getTranscript() != null ? session.getTranscript() : ""
+        );
         transcript.append("A").append(count).append(": ").append(answer).append("\n");
 
         boolean isFinal = count >= QUESTIONS_PER_ROUND;
@@ -123,10 +120,10 @@ public class MockInterviewService {
                 .call()
                 .content();
 
-        if (isFinal) {
-            MockInterviewSession session = sessionRepository.findById(sessionId)
-                    .orElseThrow(() -> new ApiException("No session found for id: " + sessionId, HttpStatus.NOT_FOUND));
+        // Only update DB if LLM call succeeds
+        session.setCurrentQuestionCount(count);
 
+        if (isFinal) {
             LocalDateTime now = LocalDateTime.now();
             session.setStatus(MockInterviewSession.InterviewStatus.COMPLETED);
             session.setCompletedAt(now);
@@ -136,14 +133,14 @@ public class MockInterviewService {
                 session.setDurationSeconds((int) Duration.between(session.getStartedAt(), now).getSeconds());
             }
             sessionRepository.save(session);
-
-            questionCount.remove(sessionId);
-            transcripts.remove(sessionId);
-
+            
             return new MockInterviewController.InterviewResponse(sessionId, null, true, reply);
         }
 
         transcript.append("Q").append(count + 1).append(": ").append(reply).append("\n");
+        session.setTranscript(transcript.toString());
+        sessionRepository.save(session);
+
         return new MockInterviewController.InterviewResponse(sessionId, reply, false, null);
     }
 
