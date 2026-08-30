@@ -22,13 +22,4 @@ public class CompanyController {
         return companyService.getCompany(id);
     }
 
-    @PostMapping
-    public Company createCompany(@RequestBody Company company) {
-        return companyService.createCompany(company);
-    }
-
-    @PutMapping("/{id}")
-    public Company updateCompany(@PathVariable Long id, @RequestBody Company company) {
-        return companyService.updateCompany(id, company);
-    }
 }

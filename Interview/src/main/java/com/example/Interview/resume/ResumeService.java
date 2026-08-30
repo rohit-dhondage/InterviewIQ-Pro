@@ -21,6 +21,7 @@ public class ResumeService {
     private final ResumeStorageService storageService;
     private final ResumeTextExtractor textExtractor;
     private final ResumeScoringService scoringService;
+    private final com.example.Interview.progress.ProgressService progressService;
 
     @Transactional
     public Resume upload(User user, MultipartFile file) {
@@ -39,8 +40,18 @@ public class ResumeService {
                 .feedback(scoring.feedback())
                 .extractedText(text)
                 .build();
+        
+        resume = resumeRepository.save(resume);
 
-        return resumeRepository.save(resume);
+        // Update student snapshot
+        student.setResumeScore(scoring.atsScore());
+        student.updateReadinessScore();
+        studentRepository.save(student);
+
+        // Record progress history
+        progressService.record(student, scoring.atsScore(), student.getReadinessScore(), null, null);
+
+        return resume;
     }
 
     public List<Resume> history(User user) {

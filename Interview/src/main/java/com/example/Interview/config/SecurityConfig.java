@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -53,7 +54,10 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // College list is public (needed for registration dropdown)
-                        .requestMatchers("/api/v1/colleges/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/colleges/**").permitAll()
+                        
+                        // Companies list is readable by any authenticated user
+                        .requestMatchers(HttpMethod.GET, "/api/v1/companies/**").authenticated()
 
                         // Admin-only endpoints
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
@@ -68,6 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/dashboard/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/roadmap/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/doubts/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/progress/**").hasRole("STUDENT")
 
                         .anyRequest().authenticated()
                 )

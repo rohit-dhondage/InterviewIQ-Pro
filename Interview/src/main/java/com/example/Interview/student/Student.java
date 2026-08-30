@@ -3,6 +3,7 @@ package com.example.Interview.student;
 import com.example.Interview.auth.Entity.User;
 import com.example.Interview.college.College;
 import com.example.Interview.college.Department;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -22,6 +23,7 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
@@ -62,4 +64,16 @@ public class Student {
     @CollectionTable(name = "student_preferred_topics", joinColumns = @JoinColumn(name = "student_id"))
     @Column(name = "topic")
     private List<String> preferredStudyTopics = new ArrayList<>();
+
+    public void updateReadinessScore() {
+        if (resumeScore == null && interviewScore == null) {
+            readinessScore = null;
+        } else if (resumeScore == null) {
+            readinessScore = interviewScore;
+        } else if (interviewScore == null) {
+            readinessScore = resumeScore;
+        } else {
+            readinessScore = (resumeScore * 0.4) + (interviewScore * 0.6);
+        }
+    }
 }

@@ -26,6 +26,7 @@ public class MockInterviewService {
     private final MockInterviewSessionRepository sessionRepository;
     private final StudentRepository studentRepository;
     private final ResumeRepository resumeRepository;
+    private final com.example.Interview.progress.ProgressService progressService;
 
     private static final int QUESTIONS_PER_ROUND = 4;
 
@@ -111,7 +112,7 @@ public class MockInterviewService {
         boolean isFinal = count >= QUESTIONS_PER_ROUND;
 
         String userTurn = isFinal
-                ? answer + "\n\n[This was the final question. Give overall structured feedback now: strengths, gaps, and one concrete improvement — 4-5 sentences total. Do not ask another question.]"
+                ? answer + "\n\n[This was the final question. Give overall structured feedback now: strengths, gaps, and one concrete improvement — 4-5 sentences total. ALSO, end your entire response with a single line formatted EXACTLY like this: SCORE: X, where X is an integer out of 100 representing the candidate's performance. Do not ask another question.]"
                 : answer;
 
         String reply = chatClient.prompt()
@@ -130,9 +131,34 @@ public class MockInterviewService {
             session.setFeedback(reply);
             session.setTranscript(transcript.toString());
             if (session.getStartedAt() != null) {
-                session.setDurationSeconds((int) Duration.between(session.getStartedAt(), now).getSeconds());
+            session.setDurationSeconds((int) Duration.between(session.getStartedAt(), now).getSeconds());
             }
             sessionRepository.save(session);
+            
+            // Extract numeric score
+            Double score = 0.0;
+            try {
+                String[] lines = reply.split("\\r?\\n");
+                for (String line : lines) {
+                    if (line.trim().startsWith("SCORE:")) {
+                        String num = line.substring(6).trim().replaceAll("[^0-9]", "");
+                        if (!num.isEmpty()) {
+                            score = Double.parseDouble(num);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                // Ignore parse errors, score remains 0.0 or could be handled otherwise
+            }
+
+            // Update student snapshot
+            Student student = session.getStudent();
+            student.setInterviewScore(score);
+            student.updateReadinessScore();
+            studentRepository.save(student);
+
+            // Record progress
+            progressService.record(student, student.getResumeScore(), student.getReadinessScore(), score, score);
             
             return new MockInterviewController.InterviewResponse(sessionId, null, true, reply);
         }

@@ -20,4 +20,9 @@ public class CollegeController {
     public List<Department> getDepartments(@PathVariable Long collegeId) {
         return collegeService.getDepartments(collegeId);
     }
+
+    @GetMapping("/{collegeId}/tpo-contacts")
+    public List<com.example.Interview.student.dto.TpoContactResponse> getTpoContacts(@PathVariable Long collegeId) {
+        return collegeService.getTpoContacts(collegeId);
+    }
 }

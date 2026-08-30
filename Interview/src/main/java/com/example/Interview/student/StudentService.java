@@ -6,10 +6,16 @@ import com.example.Interview.college.CollegeRepository;
 import com.example.Interview.college.Department;
 import com.example.Interview.college.DepartmentRepository;
 import com.example.Interview.exception.ApiException;
+import com.example.Interview.student.dto.StudentProfileResponse;
+import com.example.Interview.student.dto.TpoContactResponse;
+import com.example.Interview.tpo.TpoProfile;
+import com.example.Interview.tpo.TpoProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -18,13 +24,14 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final CollegeRepository collegeRepository;
     private final DepartmentRepository departmentRepository;
+    private final TpoProfileRepository tpoProfileRepository;
 
-    public Student getStudentProfile(User user) {
-        return resolveStudent(user);
+    public StudentProfileResponse getStudentProfile(User user) {
+        return StudentProfileResponse.from(resolveStudent(user));
     }
 
     @Transactional
-    public Student updateStudentProfile(User user, UpdateProfileRequest request) {
+    public StudentProfileResponse updateStudentProfile(User user, UpdateProfileRequest request) {
         Student student = resolveStudent(user);
 
         if (request.collegeId() != null) {
@@ -43,10 +50,24 @@ public class StudentService {
         if (request.rollNo() != null) student.setRollNo(request.rollNo());
         if (request.cgpa() != null) student.setCgpa(request.cgpa());
 
-        return studentRepository.save(student);
+        return StudentProfileResponse.from(studentRepository.save(student));
     }
 
-    private Student resolveStudent(User user) {
+    public List<TpoContactResponse> getTpoContacts(User user) {
+        Student student = resolveStudent(user);
+        List<TpoProfile> tpos = tpoProfileRepository.findByCollegeId(student.getCollege().getId());
+
+        return tpos.stream()
+                .map(tpo -> new TpoContactResponse(
+                        tpo.getUser().getFullName(),
+                        tpo.getUser().getEmail(),
+                        tpo.getContactNumber(),
+                        student.getCollege().getName()
+                ))
+                .toList();
+    }
+
+    public Student resolveStudent(User user) {
         return studentRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ApiException("Student profile not found", HttpStatus.NOT_FOUND));
     }

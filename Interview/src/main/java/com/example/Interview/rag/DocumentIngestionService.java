@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.List;
 
 @Component
@@ -16,9 +17,20 @@ import java.util.List;
 public class DocumentIngestionService implements CommandLineRunner {
 
     private final VectorStore vectorStore;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public void run(String... args) {
+        try {
+            Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM vector_store", Integer.class);
+            if (count != null && count > 0) {
+                System.out.println("Vector store already populated (" + count + " records). Skipping ingestion.");
+                return;
+            }
+        } catch (Exception e) {
+            System.out.println("Could not check vector store size, proceeding with ingestion.");
+        }
+
         TextReader reader = new TextReader(new ClassPathResource("docs/core-java-notes.txt"));
         List<Document> rawDocs = reader.get();
 
