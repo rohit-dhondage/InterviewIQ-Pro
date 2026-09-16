@@ -1,0 +1,25 @@
+[33mcommit c61b44e08ae07b6f6a4f28d7e86596e51a8b9d12[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author: Rohit Dhondage <rohitdhondage110@gmail.com>
+Date:   Fri Aug 14 16:38:45 2026 +0530
+
+    ﻿feat: add public college/department lookup endpoints for signup
+    
+    - CollegeService: getAllColleges(), getDepartments(collegeId) - throws
+      ApiException NOT_FOUND for an invalid collegeId
+    - CollegeController: GET /api/v1/colleges, GET /api/v1/colleges/{collegeId}/departments
+    - SecurityConfig: whitelist both routes as public (needed pre-signup,
+      before a student has a token)
+
+ .idea/.name                                        |   1 [32m+[m
+ .idea/compiler.xml                                 |  22 [32m+++[m
+ .idea/encodings.xml                                |   6 [32m+[m
+ .idea/jarRepositories.xml                          |  20 [32m+++[m
+ .idea/misc.xml                                     |  12 [32m++[m
+ .idea/vcs.xml                                      |   6 [32m+[m
+ .idea/workspace.xml                                | 155 [32m+++++++++++++++++++++[m
+ .../example/Interview/InterviewApplication.java    |   2 [32m+[m
+ .../Interview/college/CollegeController.java       |  23 [32m+++[m
+ .../example/Interview/college/CollegeService.java  |  27 [32m++++[m
+ .../interview/MockInterviewController.java         |  54 [32m+++++[m[31m--[m
+ .../student/StudentPreferencesController.java      |  28 [32m++[m[31m--[m
+ 12 files changed, 330 insertions(+), 26 deletions(-)
