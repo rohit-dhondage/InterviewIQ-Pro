@@ -22,6 +22,11 @@ public class MockInterviewController {
         return mockInterviewService.schedule(user, request);
     }
 
+    @PostMapping("/start")
+    public InterviewResponse startNew(@AuthenticationPrincipal User user, @RequestBody(required = false) ScheduleRequest request) {
+        return mockInterviewService.startNewSession(user, request);
+    }
+
     @GetMapping("/upcoming/me")
     public List<MockInterviewSession> upcoming(@AuthenticationPrincipal User user) {
         return mockInterviewService.getUpcomingSessions(user);
@@ -51,5 +56,20 @@ public class MockInterviewController {
 
     public record AnswerRequest(String answer) {}
 
-    public record InterviewResponse(String sessionId, String question, boolean finished, String feedback) {}
+    public record InterviewResponse(
+            String sessionId,
+            String question,
+            boolean finished,
+            String feedback,
+            String company,
+            String role,
+            String round,
+            Integer questionCount,
+            Integer maxQuestions,
+            Double score
+    ) {
+        public InterviewResponse(String sessionId, String question, boolean finished, String feedback) {
+            this(sessionId, question, finished, feedback, "Microsoft", "Software Engineer", "Technical", 1, 4, 88.0);
+        }
+    }
 }

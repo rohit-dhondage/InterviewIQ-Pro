@@ -15,12 +15,11 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Seeds the first ADMIN account on startup if none exists.
- * Credentials: admin@interviewiq.com / Admin@123456
- * Change the password immediately after first login.
+ * Seeds the platform Admin and top Premier Colleges of Nashik on startup.
+ * Admin Credentials: admin@interviewiq.com / Admin@123456
  */
 @Component
 @RequiredArgsConstructor
@@ -51,19 +50,51 @@ public class DataInitializer implements ApplicationRunner {
             log.info("=== ADMIN SEEDED: {} | default password: {} ===", ADMIN_EMAIL, ADMIN_PASSWORD);
         }
 
-        // Seed Colleges and Departments for Frontend
-        if (collegeRepository.count() == 0) {
-            College vjti = collegeRepository.save(College.builder().name("VJTI Mumbai").address("Mumbai").build());
-            College coep = collegeRepository.save(College.builder().name("COEP Pune").address("Pune").build());
+        // Ensure all 12 Nashik Colleges exist in Database
+        List<String[]> nashikColleges = List.of(
+            new String[]{"MET's Institute of Engineering, Bhujbal Knowledge City (MET BKC), Nashik", "Adgaon, Nashik"},
+            new String[]{"K. K. Wagh Institute of Engineering Education & Research (KKWIEER), Nashik", "Amrutdham, Panchavati, Nashik"},
+            new String[]{"PVG's College of Engineering & S. S. Dhamankar Institute of Management (PVGCOE), Nashik", "Mhasrul, Dindori Road, Nashik"},
+            new String[]{"NDMVP Samaj's KBT College of Engineering (KBTCOE), Nashik", "Gangapur Road, Nashik"},
+            new String[]{"Sandip Institute of Technology & Research Centre (SITRC), Nashik", "Trimbak Road, Mahiravani, Nashik"},
+            new String[]{"Guru Gobind Singh College of Engineering & Research Centre (GCOERC), Nashik", "Pathardi Phata, Nashik"},
+            new String[]{"Matoshri College of Engineering & Research Centre (MCOERC), Nashik", "Eklahare, Near Odha, Nashik"},
+            new String[]{"GES's R. H. Sapat College of Engineering, Management & Research, Nashik", "Prashant Nagar, Nashik"},
+            new String[]{"Sir Visvesvaraya Institute of Technology (SVIT), Chincholi, Nashik", "Chincholi, Sinnar, Nashik"},
+            new String[]{"Brahma Valley College of Engineering & Research Centre, Nashik", "Anjaneri, Trimbakeshwar, Nashik"},
+            new String[]{"Gokhale Education Society's JDC Bytco Institute of Management, Nashik", "College Road, Nashik"},
+            new String[]{"SNJB's Late Sau KB Jain College of Engineering, Chandwad, Nashik", "Neminagar, Chandwad, Nashik"}
+        );
 
-            departmentRepository.save(Department.builder().name("Computer Engineering").college(vjti).build());
-            departmentRepository.save(Department.builder().name("Information Technology").college(vjti).build());
-            departmentRepository.save(Department.builder().name("Electronics & Telecommunication").college(vjti).build());
+        List<String> departments = List.of(
+            "Computer Engineering",
+            "Information Technology",
+            "Artificial Intelligence & Data Science (AI & DS)",
+            "Electronics & Telecommunication (E&TC)",
+            "Mechanical Engineering"
+        );
 
-            departmentRepository.save(Department.builder().name("Computer Engineering").college(coep).build());
-            departmentRepository.save(Department.builder().name("Information Technology").college(coep).build());
-            departmentRepository.save(Department.builder().name("Electronics & Telecommunication").college(coep).build());
-            log.info("=== COLLEGES AND DEPARTMENTS SEEDED ===");
+        for (String[] cData : nashikColleges) {
+            String colName = cData[0];
+            if (!collegeRepository.existsByName(colName)) {
+                College savedCollege = collegeRepository.save(
+                    College.builder()
+                        .name(colName)
+                        .address(cData[1])
+                        .build()
+                );
+
+                for (String deptName : departments) {
+                    departmentRepository.save(
+                        Department.builder()
+                            .name(deptName)
+                            .college(savedCollege)
+                            .build()
+                    );
+                }
+                log.info("Seeded college: {}", colName);
+            }
         }
+        log.info("=== NASHIK COLLEGES AND DEPARTMENTS SYNCHRONIZED ===");
     }
 }

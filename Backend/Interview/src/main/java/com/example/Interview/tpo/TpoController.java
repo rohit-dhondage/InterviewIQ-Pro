@@ -29,6 +29,11 @@ public class TpoController {
         return tpoService.getProfile(user);
     }
 
+    @GetMapping("/analytics")
+    public java.util.Map<String, Object> getAnalytics(@AuthenticationPrincipal User user) {
+        return tpoService.getTpoAnalytics(user);
+    }
+
     @GetMapping("/students")
     public List<TpoStudentView> getStudents(@AuthenticationPrincipal User user) {
         return tpoService.getStudentsInCollege(user);

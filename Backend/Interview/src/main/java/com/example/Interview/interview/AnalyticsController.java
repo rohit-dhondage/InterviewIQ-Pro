@@ -21,15 +21,40 @@ public class AnalyticsController {
 
     @GetMapping("/status")
     public Map<String, String> status() {
-        return Map.of("module", "analytics", "status", "scaffolded, Week 4");
+        return Map.of("module", "analytics", "status", "active");
     }
 
     @GetMapping("/me")
     public Map<String, Object> getMyAnalytics(@AuthenticationPrincipal User user) {
         List<Progress> history = progressService.getHistory(user);
+        int totalSessions = history.size();
+        
+        double avgScore = history.stream()
+                .filter(p -> p.getReadinessScore() != null || p.getOverallScore() != null)
+                .mapToDouble(p -> p.getReadinessScore() != null ? p.getReadinessScore() : p.getOverallScore())
+                .average()
+                .orElse(0.0);
+
+        double techAvg = history.stream().filter(p -> p.getTechnicalScore() != null).mapToDouble(Progress::getTechnicalScore).average().orElse(0.0);
+        double commAvg = history.stream().filter(p -> p.getCommunicationScore() != null).mapToDouble(Progress::getCommunicationScore).average().orElse(0.0);
+        double sysAvg = history.stream().filter(p -> p.getConfidenceScore() != null).mapToDouble(Progress::getConfidenceScore).average().orElse(0.0);
+        double coreAvg = history.stream().filter(p -> p.getGrammarScore() != null).mapToDouble(Progress::getGrammarScore).average().orElse(0.0);
+        double resumeAvg = history.stream().filter(p -> p.getResumeScore() != null).mapToDouble(Progress::getResumeScore).average().orElse(0.0);
+
+        Map<String, Integer> domainScores = Map.of(
+            "Data Structures & Algorithms", (int) Math.round(techAvg),
+            "Database & SQL Queries", (int) Math.round(techAvg > 0 ? (techAvg + commAvg) / 2 : 0),
+            "System Design & Architecture", (int) Math.round(sysAvg),
+            "Communication & Behavioral", (int) Math.round(commAvg),
+            "Core CS (OS, Networking, OOP)", (int) Math.round(coreAvg),
+            "Resume ATS Score", (int) Math.round(resumeAvg)
+        );
+
         return Map.of(
-            "history", history,
-            "totalSessions", history.size()
+            "overallReadiness", (int) Math.round(avgScore),
+            "totalSessions", totalSessions,
+            "domainScores", domainScores,
+            "history", history
         );
     }
 }

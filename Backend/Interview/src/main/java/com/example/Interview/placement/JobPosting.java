@@ -34,4 +34,10 @@ public class JobPosting {
 
     @Column(name = "required_skills")
     private String requiredSkills; // comma separated or JSON
+
+    @Column(name = "max_backlogs")
+    private Integer maxBacklogs;
+
+    @Column(name = "allowed_branches")
+    private String allowedBranches;
 }

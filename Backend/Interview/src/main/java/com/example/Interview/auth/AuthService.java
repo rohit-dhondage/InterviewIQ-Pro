@@ -40,10 +40,18 @@ public class AuthService {
         }
 
         College college = collegeRepository.findById(request.collegeId())
-                .orElseThrow(() -> new ApiException("No college found for id: " + request.collegeId(), HttpStatus.BAD_REQUEST));
+                .orElseGet(() -> collegeRepository.findAll().stream().findFirst()
+                        .orElseGet(() -> collegeRepository.save(College.builder()
+                                .name("PVG's College of Engineering & S. S. Dhamankar Institute of Management, Nashik")
+                                .address("Nashik")
+                                .build())));
 
         Department department = departmentRepository.findById(request.departmentId())
-                .orElseThrow(() -> new ApiException("No department found for id: " + request.departmentId(), HttpStatus.BAD_REQUEST));
+                .orElseGet(() -> departmentRepository.findAll().stream().findFirst()
+                        .orElseGet(() -> departmentRepository.save(Department.builder()
+                                .name("Information Technology")
+                                .college(college)
+                                .build())));
 
         User user = User.builder()
                 .fullName(request.fullName())

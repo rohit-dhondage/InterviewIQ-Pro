@@ -1,4 +1,67 @@
-HashMap allows one null key and multiple null values. It is not synchronized and not thread-safe.
-HashTable does not allow any null key or null value. It is synchronized and thread-safe, but slower due to locking.
-ArrayList is backed by a dynamic array. Access by index is O(1). Insertion/deletion in the middle is O(n) due to shifting.
-LinkedList is backed by a doubly linked list. Insertion/deletion at the ends is O(1). Access by index is O(n).
+=== INTERVIEW IQ PRO - COMPREHENSIVE COMPUTER SCIENCE & PLACEMENT STUDY BANK ===
+
+--- SECTION 1: CORE JAVA & OOP CONCEPTS ---
+
+Q: What is the difference between HashMap and ConcurrentHashMap?
+HashMap allows one null key and multiple null values. It is not thread-safe. ConcurrentHashMap is thread-safe and allows multiple threads to read and write concurrently without locking the entire map. It uses bucket-level locking (or CAS operations in Java 8+). ConcurrentHashMap does NOT allow null keys or null values.
+
+Q: What is the difference between Arraylist and LinkedList?
+ArrayList is backed by a dynamic array. Random access by index is O(1). Insertion or deletion in the middle is O(n) because elements must be shifted. LinkedList is backed by a doubly linked list. Access by index is O(n). Insertion and deletion at the ends or when given a pointer are O(1).
+
+Q: What is JVM Memory Model (Heap vs Stack)?
+Stack Memory: Stores local variables, primitive values, and method execution frames. Each thread has its own stack memory. Stack memory management is LIFO and memory is allocated/freed automatically as methods enter/exit.
+Heap Memory: Stores objects and JRE classes. Shared across all threads. Garbage Collector (GC) manages heap memory by freeing unreferenced objects.
+
+Q: Difference between Interface and Abstract Class in Java 8+?
+An abstract class can have instance fields, constructors, and state. A class can extend only one abstract class. Interfaces can contain abstract methods, default methods, and static methods. A class can implement multiple interfaces.
+
+--- SECTION 2: DATA STRUCTURES & ALGORITHMS (DSA) ---
+
+Q: What is the time complexity of Binary Search and how does it work?
+Binary Search works on sorted arrays. It repeatedly divides the search interval in half by comparing the target with the middle element. Time complexity is O(log N) and space complexity is O(1) iterative or O(log N) recursive.
+
+Q: What is Dynamic Programming and when to use Top-Down vs Bottom-Up?
+Dynamic Programming is an optimization technique used for problems with overlapping subproblems and optimal substructure.
+Top-Down (Memoization): Uses recursion and caches results of subproblems in a table or hash map.
+Bottom-Up (Tabulation): Uses iteration to solve smaller subproblems first and build up to the final answer.
+
+Q: How do Hash Collisions work in Java HashMap?
+When two distinct keys produce the same hash code (bucket index), a collision occurs. In Java 8+, collisions are handled using a linked list inside the bucket. If the number of nodes in a bucket exceeds TREEIFY_THRESHOLD (default 8), the linked list is converted into a Red-Black Tree, improving worst-case search complexity from O(n) to O(log n).
+
+--- SECTION 3: DATABASE & SQL CONCEPTS ---
+
+Q: What are ACID Properties in Relational Databases?
+Atomicity: All operations in a transaction complete successfully, or all are rolled back.
+Consistency: The database transitions from one valid state to another, maintaining invariants.
+Isolation: Concurrent transactions execute without interfering with each other.
+Durability: Once committed, transaction data is permanently stored even during power failures.
+
+Q: What is the difference between WHERE and HAVING in SQL?
+WHERE filters rows BEFORE grouping occurs. It cannot be used with aggregate functions like COUNT() or SUM(). HAVING filters groups AFTER GROUP BY has been evaluated and works directly with aggregate functions.
+
+Q: What is an Index in PostgreSQL / MySQL and how does B-Tree indexing help?
+An index is a data structure (typically a B-Tree) that speeds up data retrieval on specified columns at the cost of additional storage and slightly slower write operations (INSERT/UPDATE/DELETE). B-Tree indexes provide O(log N) search times.
+
+--- SECTION 4: SYSTEM DESIGN & SPRING BOOT ARCHITECTURE ---
+
+Q: How does Spring Boot Auto-Configuration work?
+Spring Boot checks dependencies on the classpath and automatically configures Spring ApplicationContext beans using `@EnableAutoConfiguration` and `@SpringBootApplication`. `@ConditionalOnClass` and `@ConditionalOnMissingBean` annotations decide which components to instantiate.
+
+Q: What is the difference between Monolithic and Microservices Architecture?
+Monolithic: Entire application packaged as a single unit. Simple to deploy initially, but harder to scale individual services and has a single point of failure.
+Microservices: Application split into small, decoupled, independently deployable services communicating over HTTP/REST or gRPC. Highly scalable and resilient, but adds operational and network complexity.
+
+Q: How to prevent JWT Token theft and manage token refresh?
+1. Store access tokens securely (in memory or HttpOnly cookies).
+2. Set a short expiration time (e.g., 15 minutes) for access tokens.
+3. Use a refresh token stored in an HttpOnly, Secure, SameSite cookie to request new access tokens.
+4. Implement token revocation / blacklist in Redis for instant logout.
+
+--- SECTION 5: HR & BEHAVIORAL INTERVIEW GUIDELINES ---
+
+Q: How should a candidate answer "Tell me about a time you faced a technical challenge"?
+Use the STAR Method:
+Situation: Describe the background and context of the project.
+Task: Explain your specific responsibility or the goal to achieve.
+Action: Detail the step-by-step actions you took, tools used, and technical reasoning.
+Result: Quantify the outcome (e.g., "Reduced response latency by 35% and cleared zero bug reports").

@@ -7,5 +7,7 @@ public record JobPostingRequest(
         String description,
         String packageCtc,
         Double minimumCgpa,
-        String requiredSkills
+        String requiredSkills,
+        Integer maxBacklogs,
+        String allowedBranches
 ) {}

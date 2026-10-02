@@ -20,10 +20,26 @@ public class CollegeService {
     }
 
     public List<Department> getDepartments(Long collegeId) {
-        if (!collegeRepository.existsById(collegeId)) {
-            throw new ApiException("No college found for id: " + collegeId, HttpStatus.NOT_FOUND);
+        College college = collegeRepository.findById(collegeId)
+                .orElseThrow(() -> new ApiException("No college found for id: " + collegeId, HttpStatus.NOT_FOUND));
+
+        List<Department> depts = departmentRepository.findByCollegeId(collegeId);
+        if (depts.isEmpty()) {
+            List<String> defaultNames = List.of(
+                "Computer Engineering",
+                "Information Technology",
+                "Artificial Intelligence & Data Science (AI & DS)",
+                "Electronics & Telecommunication (E&TC)",
+                "Mechanical Engineering"
+            );
+            for (String name : defaultNames) {
+                departmentRepository.save(
+                    Department.builder().name(name).college(college).build()
+                );
+            }
+            depts = departmentRepository.findByCollegeId(collegeId);
         }
-        return departmentRepository.findByCollegeId(collegeId);
+        return depts;
     }
 
     public List<com.example.Interview.student.dto.TpoContactResponse> getTpoContacts(Long collegeId) {

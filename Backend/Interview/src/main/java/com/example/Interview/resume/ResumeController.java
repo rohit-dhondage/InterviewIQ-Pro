@@ -11,13 +11,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/resumes")
+@RequestMapping({"/api/v1/resumes", "/api/v1/resume"})
 @RequiredArgsConstructor
 public class ResumeController {
 
     private final ResumeService resumeService;
 
-    @PostMapping(value = "/me", consumes = "multipart/form-data")
+    @PostMapping(value = {"/me", "/upload"}, consumes = "multipart/form-data")
     public ResponseEntity<ResumeResponse> upload(@AuthenticationPrincipal User user,
                                                  @RequestParam("file") MultipartFile file) {
         Resume saved = resumeService.upload(user, file);

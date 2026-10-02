@@ -46,6 +46,11 @@ public class MockInterviewService {
         return sessionRepository.save(session);
     }
 
+    public MockInterviewController.InterviewResponse startNewSession(User user, MockInterviewController.ScheduleRequest request) {
+        MockInterviewSession session = schedule(user, request != null ? request : new MockInterviewController.ScheduleRequest("General", "Software Engineer", "Technical", MockInterviewSession.InterviewType.TECHNICAL, LocalDateTime.now()));
+        return startSession(user, session.getId());
+    }
+
     public List<MockInterviewSession> getUpcomingSessions(User user) {
         Student student = resolveStudent(user);
         return sessionRepository.findByStudentIdAndStatusOrderByScheduledAtAsc(
@@ -96,7 +101,11 @@ public class MockInterviewService {
         session.setTranscript("Q1: " + firstQuestion + "\n");
         sessionRepository.save(session);
 
-        return new MockInterviewController.InterviewResponse(sessionId, firstQuestion, false, null);
+        return new MockInterviewController.InterviewResponse(
+                sessionId, firstQuestion, false, null,
+                session.getCompany(), session.getRole(), session.getRound(),
+                1, QUESTIONS_PER_ROUND, 0.0
+        );
     }
 
     public MockInterviewController.InterviewResponse processAnswer(User user, String sessionId, String answer) {
@@ -151,6 +160,10 @@ public class MockInterviewService {
                 // Ignore parse errors, score remains 0.0 or could be handled otherwise
             }
 
+            // Save session overall score
+            session.setOverallScore(score);
+            sessionRepository.save(session);
+            
             // Update student snapshot
             Student student = session.getStudent();
             student.setInterviewScore(score);
@@ -160,14 +173,22 @@ public class MockInterviewService {
             // Record progress
             progressService.record(student, student.getResumeScore(), student.getReadinessScore(), score, score);
             
-            return new MockInterviewController.InterviewResponse(sessionId, null, true, reply);
+            return new MockInterviewController.InterviewResponse(
+                    sessionId, null, true, reply,
+                    session.getCompany(), session.getRole(), session.getRound(),
+                    count, QUESTIONS_PER_ROUND, score
+            );
         }
 
         transcript.append("Q").append(count + 1).append(": ").append(reply).append("\n");
         session.setTranscript(transcript.toString());
         sessionRepository.save(session);
 
-        return new MockInterviewController.InterviewResponse(sessionId, reply, false, null);
+        return new MockInterviewController.InterviewResponse(
+                sessionId, reply, false, null,
+                session.getCompany(), session.getRole(), session.getRound(),
+                count, QUESTIONS_PER_ROUND, 0.0
+        );
     }
 
     private Student resolveStudent(User user) {
