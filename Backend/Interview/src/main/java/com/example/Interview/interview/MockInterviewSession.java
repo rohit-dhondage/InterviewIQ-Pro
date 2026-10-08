@@ -29,6 +29,9 @@ public class MockInterviewSession {
     private String role;
     private String round;
 
+    private String topics;
+    private String difficulty;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "interview_type")
     private InterviewType interviewType; // HR or TECHNICAL

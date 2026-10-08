@@ -52,7 +52,8 @@ public class MockInterviewController {
     // --- DTOs ---
     public record ScheduleRequest(
             String company, String role, String round,
-            MockInterviewSession.InterviewType interviewType, LocalDateTime scheduledAt) {}
+            MockInterviewSession.InterviewType interviewType, LocalDateTime scheduledAt,
+            List<String> topics, String difficulty, Integer durationMinutes) {}
 
     public record AnswerRequest(String answer) {}
 
@@ -66,10 +67,12 @@ public class MockInterviewController {
             String round,
             Integer questionCount,
             Integer maxQuestions,
-            Double score
+            Double score,
+            List<String> topics,
+            String difficulty
     ) {
         public InterviewResponse(String sessionId, String question, boolean finished, String feedback) {
-            this(sessionId, question, finished, feedback, "Microsoft", "Software Engineer", "Technical", 1, 4, 88.0);
+            this(sessionId, question, finished, feedback, "Target MNC", "Software Engineer", "Technical Round", 1, 4, 88.0, List.of("Java", "DSA"), "Medium");
         }
     }
 }

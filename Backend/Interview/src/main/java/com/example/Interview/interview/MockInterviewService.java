@@ -33,13 +33,24 @@ public class MockInterviewService {
     public MockInterviewSession schedule(User user, MockInterviewController.ScheduleRequest request) {
         Student student = resolveStudent(user);
 
+        String topicsStr = (request.topics() != null && !request.topics().isEmpty())
+                ? String.join(", ", request.topics())
+                : "Data Structures & Algorithms, Java, Core CS";
+
+        String diff = request.difficulty() != null ? request.difficulty() : "Medium";
+        String comp = request.company() != null && !request.company().trim().isEmpty() ? request.company() : "Target MNC";
+        String role = request.role() != null ? request.role() : "Software Engineer";
+        String round = request.round() != null ? request.round() : "Technical Assessment";
+
         MockInterviewSession session = MockInterviewSession.builder()
                 .student(student)
-                .company(request.company())
-                .role(request.role())
-                .round(request.round())
-                .interviewType(request.interviewType())
-                .scheduledAt(request.scheduledAt())
+                .company(comp)
+                .role(role)
+                .round(round)
+                .interviewType(request.interviewType() != null ? request.interviewType() : MockInterviewSession.InterviewType.TECHNICAL)
+                .topics(topicsStr)
+                .difficulty(diff)
+                .scheduledAt(request.scheduledAt() != null ? request.scheduledAt() : LocalDateTime.now())
                 .status(MockInterviewSession.InterviewStatus.SCHEDULED)
                 .build();
 
@@ -47,7 +58,11 @@ public class MockInterviewService {
     }
 
     public MockInterviewController.InterviewResponse startNewSession(User user, MockInterviewController.ScheduleRequest request) {
-        MockInterviewSession session = schedule(user, request != null ? request : new MockInterviewController.ScheduleRequest("General", "Software Engineer", "Technical", MockInterviewSession.InterviewType.TECHNICAL, LocalDateTime.now()));
+        MockInterviewSession session = schedule(user, request != null ? request : new MockInterviewController.ScheduleRequest(
+                "Target MNC", "Software Engineer", "Technical Assessment",
+                MockInterviewSession.InterviewType.TECHNICAL, LocalDateTime.now(),
+                List.of("Java", "Data Structures & Algorithms"), "Medium", 30
+        ));
         return startSession(user, session.getId());
     }
 
@@ -80,20 +95,29 @@ public class MockInterviewService {
             }
         }
 
+        String selectedTopics = session.getTopics() != null ? session.getTopics() : "Data Structures & Algorithms, Java";
+        String diffLevel = session.getDifficulty() != null ? session.getDifficulty() : "Medium";
+
         String systemPrompt = """
-                You are a senior %s interviewer conducting a %s round for a %s
-                position at %s. Ask one focused question at a time — do not ask multiple
-                questions in one turn. Keep questions realistic for a campus placement
-                interview at this company. After the candidate answers, briefly note
-                (1-2 sentences) whether the answer covered definition, mechanism, and
-                personal experience — the standard framework this candidate uses — then
-                ask the next question. Stay strictly in interviewer character.
+                You are a Senior Principal Interviewer at %s conducting a %s (%s round) for a %s role.
+                Selected Topics: %s.
+                Difficulty Level: %s.
+
+                STRICT INSTRUCTIONS:
+                1. Every question you ask MUST be strictly based on the candidate's selected topics: [%s] at [%s] difficulty level.
+                2. Do NOT ask generic out-of-domain questions.
+                3. Ask ONE focused, clear, and realistic technical question at a time. Include clear input/output requirements or code problem context if applicable.
+                4. When the candidate answers or submits code, evaluate their exact response for technical accuracy, time/space complexity ($O(N)$), and edge cases before asking the next question.
+                5. Stay strictly in character as a professional tech interviewer.
                 %s
-                """.formatted(session.getInterviewType(), session.getRound(), session.getRole(), session.getCompany(), resumeContext);
+                """.formatted(
+                        session.getCompany(), session.getInterviewType(), session.getRound(), session.getRole(),
+                        selectedTopics, diffLevel, selectedTopics, diffLevel, resumeContext
+                );
 
         String firstQuestion = chatClient.prompt()
                 .system(systemPrompt)
-                .user("Begin the interview with your first question.")
+                .user("Begin the technical interview by asking the first question strictly based on: " + selectedTopics)
                 .advisors(a -> a.param(ChatMemory.CONVERSATION_ID, sessionId))
                 .call()
                 .content();
@@ -101,10 +125,15 @@ public class MockInterviewService {
         session.setTranscript("Q1: " + firstQuestion + "\n");
         sessionRepository.save(session);
 
+        List<String> topicsList = java.util.Arrays.stream(selectedTopics.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+
         return new MockInterviewController.InterviewResponse(
                 sessionId, firstQuestion, false, null,
                 session.getCompany(), session.getRole(), session.getRound(),
-                1, QUESTIONS_PER_ROUND, 0.0
+                1, QUESTIONS_PER_ROUND, 0.0, topicsList, diffLevel
         );
     }
 
@@ -173,10 +202,15 @@ public class MockInterviewService {
             // Record progress
             progressService.record(student, student.getResumeScore(), student.getReadinessScore(), score, score);
             
+            List<String> topicsList = session.getTopics() != null
+                    ? java.util.Arrays.stream(session.getTopics().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
+                    : List.of("Data Structures & Algorithms");
+
             return new MockInterviewController.InterviewResponse(
                     sessionId, null, true, reply,
                     session.getCompany(), session.getRole(), session.getRound(),
-                    count, QUESTIONS_PER_ROUND, score
+                    count, QUESTIONS_PER_ROUND, score,
+                    topicsList, session.getDifficulty()
             );
         }
 
@@ -184,10 +218,15 @@ public class MockInterviewService {
         session.setTranscript(transcript.toString());
         sessionRepository.save(session);
 
+        List<String> topicsList = session.getTopics() != null
+                ? java.util.Arrays.stream(session.getTopics().split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList()
+                : List.of("Data Structures & Algorithms");
+
         return new MockInterviewController.InterviewResponse(
                 sessionId, reply, false, null,
                 session.getCompany(), session.getRole(), session.getRound(),
-                count, QUESTIONS_PER_ROUND, 0.0
+                count, QUESTIONS_PER_ROUND, 0.0,
+                topicsList, session.getDifficulty()
         );
     }
 
