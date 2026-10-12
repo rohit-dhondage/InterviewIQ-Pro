@@ -1,0 +1,17 @@
+
+# IDE files
+.idea/
+**/.idea/
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# IDE configuration
+.idea/
+**/.idea/
+.vscode/
+# Local environment secrets
+.env
+.env.*
+!.env.example
