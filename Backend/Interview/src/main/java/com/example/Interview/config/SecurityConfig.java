@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -31,6 +32,9 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
+
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174}")
+    private String allowedOriginsConfig;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -58,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/interview/status",
                                 "/api/v1/doubts/status",
+                                "/api/v1/rag/status",
                                 "/api/v1/analytics/status"
                         ).permitAll()
 
@@ -76,11 +81,12 @@ public class SecurityConfig {
                         // Student endpoints — accessible by students
                         .requestMatchers("/api/v1/students/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/interviews/**").hasRole("STUDENT")
-                        .requestMatchers("/api/v1/resumes/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/resume/**", "/api/v1/resumes/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/dashboard/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/roadmap/**").hasRole("STUDENT")
-                        .requestMatchers("/api/v1/doubts/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/doubts/**", "/api/v1/rag/**").hasRole("STUDENT")
                         .requestMatchers("/api/v1/progress/**").hasRole("STUDENT")
+                        .requestMatchers("/api/v1/analytics/**").hasAnyRole("STUDENT", "TPO", "ADMIN")
 
                         .anyRequest().authenticated()
                 )
@@ -115,10 +121,17 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        List<String> origins = Arrays.stream(allowedOriginsConfig.split(","))
+                .map(String::trim)
+                .map(origin -> origin.replaceAll("/+$", ""))
+                .filter(origin -> !origin.isEmpty())
+                .toList();
+        configuration.setAllowedOrigins(origins);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
+        configuration.setExposedHeaders(List.of("Authorization"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
